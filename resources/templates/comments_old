@@ -1,0 +1,74 @@
+Template Params(hasIteration)
+params:[{[1 ]}]
+
+Main Html
+main:[{[
+	<div class="row">
+		<div class="col-sm-1"></div>
+		<div class="col-sm-10 comment-container">
+			<h4>Comments: [[comment_BUTTON]]</h4>
+
+			[[ITERATION_replies]]
+
+		</div>
+		<div class="col-sm-1"></div>
+	</div>
+]}]
+
+Iteration Html
+iteration:[{[
+<div class="comment">
+	<h4>[[author_name]]</h4>
+	<div class="row">
+		<div class="col-sm-11">[[content]]</div>
+	</div>
+	<div class="row">
+		<div class="col-sm-11">
+			[[image]]
+		</div>
+	</div>
+	<br>
+	<a href="[[comment_edit_url]]">
+		<button type="button" class="btn-xs" style="margin-bottom: 10px;">Edit</button>
+	</a>
+	<a href="[[comment_create_url]]">
+		<button type="button" class="btn-xs" style="margin-bottom: 10px;">Reply</button>
+	</a>
+</div>
+]}]
+
+Javascript for template
+javascript:[{[
+$(document).ready(function(){
+
+		$('body').on('click','.view_relies',function(){
+			let class_name = $(this).data('target');
+			$('.replies-' + class_name).toggle();
+		});
+
+	});
+]}]
+
+Style for template
+style:[{[
+.comment {
+	margin-bottom: 5px;
+    margin-top: 10px;
+	border-bottom: 1px solid #eee;
+}
+
+.comment-container {
+	border-left: 1px solid #eee;
+}
+
+.reply {
+	margin-bottom: 5px;
+    margin-left: 5px;
+	border-bottom: 1px solid #eee;
+}
+
+.reply-container {
+	border-left: 1px solid #eee;
+	padding-left: 5px;
+}
+]}]

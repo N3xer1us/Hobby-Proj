@@ -1,0 +1,64 @@
+
+Template Params(hasIteration)
+params:[{[1 ]}]
+
+Main Html
+main:[{[
+	<div class="row">
+		<div class="col-sm-1"></div>
+		<div class="col-sm-10 comment-container">
+			<h4>Comments: [[comment_BUTTON]]</h4>
+
+			[[replies_ITERATION]]
+
+		</div>
+		<div class="col-sm-1"></div>
+	</div>
+]}]
+
+Iteration Html
+iteration:[{[
+	replies_ITERATION::{
+	<div class="comment">
+		<h4>[[author_name]]</h4>
+		<h5>On: [[created_on]]</h5>
+		<div class="row">
+			<div class="col-sm-11">[[content]]</div>
+		</div>
+		<div class="row">
+			<div class="col-sm-11">
+				[[image]]
+			</div>
+		</div>
+		<br>
+		[[edit_BUTTON]]
+		[[reply_BUTTON]]
+	</div>
+	};
+]}]
+
+Javascript for template
+javascript:[{[]}]
+
+Style for template
+style:[{[
+.comment {
+	margin-bottom: 5px;
+    margin-top: 10px;
+	border-bottom: 1px solid #eee;
+	padding-bottom: 10px;
+}
+
+.comment:nth-child(2) {
+    margin-top: 20px;
+}
+
+.comment:last-child {
+    margin-bottom: 35px;
+}
+
+.comment-container {
+	padding-top: 0px;
+	border-left: 1px solid #eee;
+}
+]}]

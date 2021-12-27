@@ -1,0 +1,32 @@
+html,
+body {
+    height: 100%;
+}
+
+form textarea.noresize {
+	resize: none;
+}
+
+.content {
+	margin-top: 30px;
+	margin-bottom: 50px;
+}
+
+.header-content {
+	margin-top: 30px;
+}
+
+.err_msg {
+	color: red;
+	font-weight: bold;
+}
+
+.footer {
+	background-color: #222222;
+	height: 20px;
+	width: 100%;
+	padding-left: 0px;
+	padding-right: 0px;
+	position: fixed;
+	bottom: 0px;
+}
