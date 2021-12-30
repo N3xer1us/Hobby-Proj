@@ -29,7 +29,14 @@ class configUpload
 
 	static function get_file_url($file)
 	{
-		return '/coursework/'.UPLOAD_DIR . $file;
+		if(!is_null($file) && $file != '')
+		{
+			return '/coursework/'.UPLOAD_DIR . $file;
+		}
+		else
+		{
+			return '';
+		}
 	}
 }
 

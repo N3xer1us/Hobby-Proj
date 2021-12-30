@@ -112,7 +112,7 @@ class DBconfig{
 	static function delete($table_name , $data)
 	{
 
-		$query = self::$conn->prepare('UPDATE '.$table_name.'SET is_removed = 1 , removed_on = ' . date('Y/m/d H:i:s') . ' WHERE id = :id');
+		$query = self::$conn->prepare('UPDATE '.$table_name.' SET is_removed = 1 , removed_on = "' . date('Y/m/d H:i:s') . '" WHERE id = :id');
 		$res = $query->execute($data);
 
 		if($res == false)

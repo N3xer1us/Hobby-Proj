@@ -1,0 +1,44 @@
+
+Template Params(hasIteration)
+params:[{[0]}]
+
+Main Html
+main:[{[
+	<div class="row">
+		<div class="col-md-1"></div>
+		<div class="col-md-4">
+			<h2>[[ticket_title]]</h2>
+			<h4>by: [[ticket_author]]</h4>
+			<h4>Ticket Type: <span>[[ticket_maint_type]]</span></h4>
+		</div>
+		<div class="col-md-4">
+			[[image_SEGMENT]]
+		</div>
+		<div class="col-md-3"></div>
+	</div>
+	<div class="row">
+		<div class="col-md-1"></div>
+		<div class="col-md-10">
+			<h4>[[ticket_content]]</h4>
+		</div>
+		<div class="col-md-1"></div>
+	</div>
+]}]
+
+Iteration Html
+iteration:[{[]}]
+
+Segment Html
+segment:[{[
+	image_SEGMENT::{
+		<a href="[[ticket_image]]" target="_blank">
+			<img src="[[ticket_image]]" class="img-fluid"/>
+		</a>
+	};
+]}]
+
+Javascript for template
+javascript:[{[]}]
+
+Style for template
+style:[{[]}]

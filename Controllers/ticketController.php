@@ -27,7 +27,6 @@ class ticketController
 				foreach ($my_tickets as $mt)
 				{
 					$mt['title'] = '<a href="'.configRouter::get_link('ticket/preview').'?id='.$mt['id'].'" >'.$mt['title'].'</a>';
-
 					$mt['buttons'] = '<a href="'.configRouter::get_link('ticket/update').'?id='.$mt['id'].'" ><button type="button" name="update" class="btn btn-primary btn-sm" ><span class="glyphicon glyphicon-pencil"></span></button></a> ';
 					$mt['buttons'] .= '<a href="'.configRouter::get_link('ticket/delete').'?id='.$mt['id'].'" ><button type="button" name="delete" class="btn btn-primary btn-sm" ><span class="glyphicon glyphicon-trash"></span></button></a>';
 
@@ -78,7 +77,7 @@ class ticketController
 					}
 				}
 
-				if(count($tickets_table['rows']) != 0)
+				if(count($tickets_table['rows']) >= 0)
 				{
 					$tickets_table['columns'] = array('Title','Content','Ticket Type','Author','Created on');
 				}
@@ -87,7 +86,7 @@ class ticketController
 			$data = array(
 				'table_title' => 'Public Tickets',
 				'user_role_id' => $currentRole,
-				'my_ticket_TABLE' => (count($my_ticket_table['rows']) != 0?$my_ticket_table:'There\'s no tickets here'),
+				'my_ticket_TABLE' => (isset($my_ticket_table['rows'])?$my_ticket_table:'There\'s no tickets here'),
 				'tickets_TABLE' => (count($tickets_table['rows']) != 0?$tickets_table:'There\'s no tickets here'),
 				'add_ticket_BUTTON' => array(
 					'btn_type'=>'button',
@@ -112,7 +111,7 @@ class ticketController
 					break;
 
 				default :
-					trigger_error('Your role is invalid , how did you manage that even , dude',E_USER_ERROR);
+					trigger_error('Your role is invalid , how did you manage that, dude wtf',E_USER_ERROR);
 			}
 
 			if(is_array($tickets))
@@ -165,7 +164,7 @@ class ticketController
 			}
 			else
 			{
-				$content = null;
+				$message['content'] = 'Please fill the content field';
 			}
 
 			if($_FILES['image']['error'] == 0)
@@ -372,6 +371,13 @@ class ticketController
 				$message['maint_type'] = 'Please choose a visibility';
 			}
 
+			$ticket_check = Repo::selectByFilter('ticket',array('id'=>$_POST['id'], 'is_removed'=>0))[0];
+
+			if($ticket_check['author_id'] != $_SESSION['currentUser']['id'])
+			{
+				$message['form_err'] = 'You are not the author of this ticket';
+			}
+
 			if(!isset($message))
 			{
 				$ticket = new Ticket($_POST['id'],$title,$content,$image,(int)$visibility,(int)$maint_type,(int)$_SESSION['currentUser']['id'], $_POST['created_on'], 0);
@@ -382,28 +388,39 @@ class ticketController
 				exit;
 			}
 		}
-
-		if(isset($_GET['id']))
-		{
-			$id = $_GET['id'];
-
-			$ticket = Repo::selectByFilter('ticket',array('id'=>$id, 'is_removed'=>0));
-			$title = $ticket['title'];
-			$content = $ticket['content'];
-			$maint_type = $ticket['maintenace_type'];
-			$visibility = $ticket['visibility'];
-			$created_on = $ticket['created_on'];
-		}
 		else
 		{
-			configRouter::goto('ticket/index');
-			exit;
+			if(isset($_GET['id']))
+			{
+				$id = $_GET['id'];
+
+				$ticket = Repo::selectByFilter('ticket',array('id'=>$id, 'is_removed'=>0))[0];
+
+				if($ticket['author_id'] == $_SESSION['currentUser']['id'])
+				{
+					$title = $ticket['title'];
+					$content = $ticket['content'];
+					$maint_type = $ticket['maintenace_type'];
+					$visibility = $ticket['visibility'];
+					$created_on = $ticket['created_on'];
+				}
+				else
+				{
+					configRouter::goto('ticket/index');
+					exit;
+				}
+			}
+			else
+			{
+				configRouter::goto('ticket/index');
+				exit;
+			}
 		}
 
 		$data = array(
 			'ticket_FORM'=> array(
 				'method' => 'post',
-				'action' => 'update',
+				'action' => 'update?id='.$id,
 				'enctype' => 'multipart/form-data',
 				'inputs' => array(
 					array(
@@ -521,9 +538,10 @@ class ticketController
 
 				$comments_data = Repo::selectByFilter('comment',array('ticket_id'=>$ticket['id'], 'is_removed' => 0));
 
+				$comments = array();
+
 				if(is_array($comments_data))
 				{
-					$comments = array();
 
 					foreach($comments_data as $comment)
 					{
@@ -669,12 +687,24 @@ class ticketController
 //						}
 			}
 
+			if($ticket['image'] != '')
+			{
+				$image = array('ticket_image' => configUpload::get_file_url($ticket['image']));
+			}
+			else
+			{
+				$image = '';
+			}
+
 				$data = array(
-					'ticket_title' => $ticket['title'],
-					'ticket_image' => configUpload::get_file_url($ticket['image']),
-					'ticket_author' => $author['username'],
-					'ticket_content' => $ticket['content'],
-					'ticket_maint_type' => $maint_type,
+					'preview_TEMPLATE' => array(
+						'template_name' => 'ticket_preview',
+						'ticket_title' => $ticket['title'],
+						'ticket_author' => $author['username'],
+						'ticket_content' => $ticket['content'],
+						'ticket_maint_type' => $maint_type,
+						'image_SEGMENT' => $image
+					),
 					'comments_TEMPLATE' => array(
 						'comment_BUTTON' => array(
 						'name' => 'Comment',
