@@ -59,9 +59,86 @@ class DBconfig{
 
 			foreach ($filterArray as $k=>$v)
 			{
-				$where[]= $k.'='.self::$conn->quote($v);
-			}
+				if(is_array($v))
+				{
+					$v[0] = strtoupper($v[0]);
 
+					if(str_contains($v[0], 'NOT'))
+					{
+						$negation = ' NOT';
+						$v[0] = trim(substr($v[0], strpos($v[0], 'NOT') + 3));
+					}
+					else
+					{
+						$negation = '';
+					}
+
+					switch ($v[0])
+					{
+						case '=':
+							$where[]= $k.' = '.self::$conn->quote($v[1]);
+							break;
+						case '<':
+							$where[]= $k.' < '.self::$conn->quote($v[1]);
+							break;
+						case '>':
+							$where[]= $k.' > '.self::$conn->quote($v[1]);
+							break;
+						case '<=':
+							$where[]= $k.' <= '.self::$conn->quote($v[1]);
+							break;
+						case '>=':
+							$where[]= $k.' >= '.self::$conn->quote($v[1]);
+							break;
+						case '<>':
+							$where[]= $k.' <> '.self::$conn->quote($v[1]);
+							break;
+						case '!=':
+							$where[]= $k.' != '.self::$conn->quote($v[1]);
+							break;
+						case '<=>':
+							$where[]= $k.' <=> '.self::$conn->quote($v[1]);
+							break;
+						case 'LIKE':
+							$where[]= $k.$negation.' LIKE '.self::$conn->quote('%'.$v[1].'%');
+							break;
+						case 'IN':
+							if(is_array($v[1]))
+							{
+								$tmp = array();
+								foreach ($v[1] as $el)
+								{
+									$tmp[] = self::$conn->quote($el);
+								}
+								$where[]=$k.$negation.' IN('.implode(', ', $tmp).')';
+							}
+							else
+							{
+								$where[]= $k.$negation.' IN('.self::$conn->quote($v[1]).')';
+							}
+							break;
+						case 'BETWEEN':
+							if(count($v) == 3)
+							{
+								$where[]= $k.$negation.' BETWEEN '.self::$conn->quote($v[1]).' AND '.self::$conn->quote($v[2]);
+							}
+							else
+							{
+								trigger_error('BETWEEN needs two values ,  you gave one', E_WARNING);
+							}
+							break;
+						case 'IS NULL':
+							$where[]= $k.' IS'.$negation.' NULL';
+							break;
+//						case 'EXISTS':
+//							break;
+					}
+				}
+				else
+				{
+					$where[]= $k.' = '.self::$conn->quote($v);
+				}
+			}
 
 			$res = self::$conn->query('SELECT '.$cols.' FROM '.$table_name.' WHERE '.implode(' AND ', $where) , PDO::FETCH_ASSOC);
 		}

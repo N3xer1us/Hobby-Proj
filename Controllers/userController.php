@@ -20,11 +20,85 @@ class userController
 
 			$role_name = Repo::selectByFilter('role',array('id'=>$_SESSION['currentUser']['role_id']))[0]['role_name'];
 
+			$filterArray = array('author_id'=>$_SESSION['currentUser']['id'], 'is_removed'=>0);
+
+			if(isset($_POST))
+			{
+				if(isset($_POST['ticketName']) && $_POST['ticketName'] != '')
+				{
+					$nameFilter = $_POST['ticketName'];
+					$filterArray['title'] = array('LIKE' , $nameFilter);
+				}
+
+				if(isset($_POST['startDate']) && configValidate::validateDate($_POST['startDate']))
+				{
+					$startDateFilter = $_POST['startDate'];
+					$filterArray['created_on'] = array('>=', $startDateFilter.'  00:00:00');
+				}
+
+				if(isset($_POST['endDate']) && configValidate::validateDate($_POST['endDate']))
+				{
+					$endDateFilter = $_POST['endDate'];
+					$filterArray['created_on'] = array('<=', $endDateFilter.' 23:59:59');
+				}
+
+				if(isset($startDateFilter) && isset($endDateFilter))
+				{
+					$filterArray['created_on'] = array('BETWEEN',$startDateFilter.'  00:00:00', $endDateFilter.' 23:59:59');
+				}
+
+				if(isset($_POST['ticketType']) && ($_POST['ticketType'] > 0 && $_POST['ticketType'] < 3))
+				{
+					$filterArray['maintenace_type'] = $_POST['ticketType'];
+				}
+
+				if(isset($_POST['ticketVisibility']) && ($_POST['ticketVisibility'] > 0 && $_POST['ticketVisibility'] < 3))
+				{
+					$filterArray['visibility'] = $_POST['ticketVisibility'];
+				}
+				
+			}
+
+			$my_tickets = Repo::selectByFilter('ticket',$filterArray, array('id','title','content','maintenace_type','visibility','created_on'));
+
+			if(is_array($my_tickets))
+			{
+				$my_ticket_table['rows'] = array();
+
+				foreach ($my_tickets as $mt)
+				{
+					$mt['title'] = '<a href="'.configRouter::get_link('ticket/preview').'?id='.$mt['id'].'" >'.$mt['title'].'</a>';
+					$mt['buttons'] = '<a href="'.configRouter::get_link('ticket/update').'?id='.$mt['id'].'" ><button type="button" name="update" class="btn btn-primary btn-sm" ><span class="glyphicon glyphicon-pencil"></span></button></a> ';
+					$mt['buttons'] .= '<a href="'.configRouter::get_link('ticket/delete').'?id='.$mt['id'].'" ><button type="button" name="delete" class="btn btn-primary btn-sm" ><span class="glyphicon glyphicon-trash"></span></button></a>';
+
+					switch ($mt['maintenace_type'])
+					{
+						case 1:
+							$mt['maintenace_type'] = 'Office';
+							break;
+						case 2:
+							$mt['maintenace_type'] = 'Technical';
+							break;
+					}
+
+					unset($mt['id']);
+					unset($mt['visibility']);
+					$my_ticket_table['rows'][] = $mt;
+				}
+
+				$my_ticket_table['columns'] = array('Title','Content','Ticket Type','Created on');
+				$my_ticket_table['columns'][] = 'Operations';
+			}
+
 			$data= array(
 				'id' => $_SESSION['currentUser']['id'],
 				'username' => $_SESSION['currentUser']['username'],
 				'full_name' => $full_name,
-				'role' => $role_name
+				'role' => $role_name,
+				'nameFilter' => (isset($nameFilter)?$nameFilter:''),
+				'startDateFilter' => (isset($startDateFilter)?$startDateFilter:''),
+				'endDateFilter' => (isset($endDateFilter)?$endDateFilter:''),
+				'MyTickets_TABLE' => (isset($my_ticket_table)?$my_ticket_table:'You have no tickets')
 			);
 
 			viewLoader::loadView('user/index.php',$data);
@@ -61,7 +135,7 @@ class userController
 
 					if(is_array($user))
 					{
-						if($user['pass'] === $pass)
+						if(password_verify($pass, $user['pass']))
 						{
 							$_SESSION['currentUser'] = $user;
 
@@ -223,6 +297,7 @@ class userController
 				{
 					if($pass === $pass_confirm)
 					{
+						$pass = password_hash($pass, PASSWORD_DEFAULT);
 						$user = new User(null, $username, $fname, $lname, $email, $pass, $DoB, (int)$role_opt);
 						Repo::insert($user);
 

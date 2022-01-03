@@ -16,39 +16,49 @@ class ticketController
 	{
 		$currentRole = $_SESSION['currentUser']['role_id'];
 
-		if($currentRole <= 3)
+		if(isset($_POST))
 		{
-			$my_tickets = Repo::selectByFilter('ticket',array('author_id'=>$_SESSION['currentUser']['id'], 'is_removed'=>0), array('id','title','content','maintenace_type','created_on'));
-
-			if(is_array($my_tickets))
+			if(isset($_POST['ticketName']) && $_POST['ticketName'] != '')
 			{
-				$my_ticket_table['rows'] = array();
-
-				foreach ($my_tickets as $mt)
-				{
-					$mt['title'] = '<a href="'.configRouter::get_link('ticket/preview').'?id='.$mt['id'].'" >'.$mt['title'].'</a>';
-					$mt['buttons'] = '<a href="'.configRouter::get_link('ticket/update').'?id='.$mt['id'].'" ><button type="button" name="update" class="btn btn-primary btn-sm" ><span class="glyphicon glyphicon-pencil"></span></button></a> ';
-					$mt['buttons'] .= '<a href="'.configRouter::get_link('ticket/delete').'?id='.$mt['id'].'" ><button type="button" name="delete" class="btn btn-primary btn-sm" ><span class="glyphicon glyphicon-trash"></span></button></a>';
-
-					switch ($mt['maintenace_type'])
-					{
-						case 1:
-							$mt['maintenace_type'] = 'Office';
-							break;
-						case 2:
-							$mt['maintenace_type'] = 'Technical';
-							break;
-					}
-
-					unset($mt['id']);
-					$my_ticket_table['rows'][] = $mt;
-				}
-
-				$my_ticket_table['columns'] = array('Title','Content','Ticket Type','Created on');
-				$my_ticket_table['columns'][] = 'Operations';
+				$nameFilter = $_POST['ticketName'];
+				$filterArray['title'] = array('LIKE' , $nameFilter);
 			}
 
-			$tickets = Repo::selectByFilter('ticket',array('visibility'=>1, 'is_removed'=>0), array('id','title','content','maintenace_type','author_id','created_on'));
+			if(isset($_POST['authorName']) && $_POST['authorName'] != '')
+			{
+				$authorFilter = $_POST['authorName'];
+				$author = Repo::selectByFilter('user', array('username' =>array('LIKE',$authorFilter)));
+				$filterArray['author_id'] = array('IN',array_column($author, 'id'));
+			}
+
+			if(isset($_POST['startDate']) && configValidate::validateDate($_POST['startDate']))
+			{
+				$startDateFilter = $_POST['startDate'];
+				$filterArray['created_on'] = array('>=', $startDateFilter.'  00:00:00');
+			}
+
+			if(isset($_POST['endDate']) && configValidate::validateDate($_POST['endDate']))
+			{
+				$endDateFilter = $_POST['endDate'];
+				$filterArray['created_on'] = array('<=', $endDateFilter.' 23:59:59');
+			}
+
+			if(isset($startDateFilter) && isset($endDateFilter))
+			{
+				$filterArray['created_on'] = array('BETWEEN',$startDateFilter.'  00:00:00', $endDateFilter.' 23:59:59');
+			}
+
+			if(isset($_POST['ticketVisibility']) && ($_POST['ticketVisibility'] > 0 && $_POST['ticketVisibility'] < 3))
+			{
+				$filterArray['visibility'] = $_POST['ticketVisibility'];
+			}
+		}
+
+		if($currentRole <= 3)
+		{
+			$filterArray['visibility'] = 1;
+			$filterArray['is_removed'] = 0;
+			$tickets = Repo::selectByFilter('ticket',$filterArray, array('id','title','content','maintenace_type','author_id','created_on'));
 
 			if(is_array($tickets))
 			{
@@ -85,8 +95,10 @@ class ticketController
 
 			$data = array(
 				'table_title' => 'Public Tickets',
-				'user_role_id' => $currentRole,
-				'my_ticket_TABLE' => (isset($my_ticket_table['rows'])?$my_ticket_table:'There\'s no tickets here'),
+				'nameFilter' => (isset($nameFilter)?$nameFilter:''),
+				'authorFilter' => (isset($authorFilter)?$authorFilter:''),
+				'startDateFilter' => (isset($startDateFilter)?$startDateFilter:''),
+				'endDateFilter' => (isset($endDateFilter)?$endDateFilter:''),
 				'tickets_TABLE' => (count($tickets_table['rows']) != 0?$tickets_table:'There\'s no tickets here'),
 				'add_ticket_BUTTON' => array(
 					'btn_type'=>'button',
@@ -102,11 +114,13 @@ class ticketController
 			switch($currentRole)
 			{
 				case 4:
-					$tickets = Repo::selectByFilter('ticket',array('maintenace_type'=>2));
+					$filterArray['maintenace_type'] = 2;
+					$tickets = Repo::selectByFilter('ticket',$filterArray);
 					$role_name = 'Tech ';
 					break;
 				case 5:
-					$tickets = Repo::selectByFilter('ticket',array('maintenace_type'=>1));
+					$filterArray['maintenace_type'] = 1;
+					$tickets = Repo::selectByFilter('ticket',$filterArray);
 					$role_name = 'Office ';
 					break;
 
@@ -131,6 +145,10 @@ class ticketController
 
 			$data = array(
 				'table_title' => $role_name .'Support Tickets',
+				'nameFilter' => (isset($nameFilter)?$nameFilter:''),
+				'authorFilter' => (isset($authorFilter)?$authorFilter:''),
+				'startDateFilter' => (isset($startDateFilter)?$startDateFilter:''),
+				'endDateFilter' => (isset($endDateFilter)?$endDateFilter:''),
 				'tickets_TABLE' => (!is_null($tickets_table)?$tickets_table:'There\'s no tickets here'),
 				'add_ticket_BUTTON' => array(
 					'btn_type'=>'button',
